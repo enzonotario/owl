@@ -8,6 +8,7 @@ import "./props_validation";
 import { Scheduler, scheduler } from "./scheduler";
 import { activateSheet } from "./styles";
 import { Browser, browser } from "../browser";
+import { onMounted, onPatched } from "../hooks";
 
 /**
  * Owl Component System
@@ -93,6 +94,13 @@ interface Internal<T extends Env> {
 
 export const portalSymbol = Symbol("portal"); // FIXME
 
+/**
+ * It is required for the dev tools to have access to the __owl__ element.
+ */
+interface HTMLElementWithInternalAccess<T extends Env = Env> extends HTMLElement {
+  __owl__: Internal<T>
+}
+
 //------------------------------------------------------------------------------
 // Component
 //------------------------------------------------------------------------------
@@ -114,7 +122,7 @@ export class Component<Props extends {} = any, T extends Env = Env> {
    * The `el` is the root element of the component.  Note that it could be null:
    * this is the case if the component is not mounted yet, or is destroyed.
    */
-  get el(): HTMLElement | null {
+  get el(): HTMLElementWithInternalAccess | null {
     return this.__owl__.vnode ? (<any>this).__owl__.vnode.elm : null;
   }
 
@@ -208,6 +216,15 @@ export class Component<Props extends {} = any, T extends Env = Env> {
     if (constr.style) {
       this.__applyStyles(constr);
     }
+
+    // DevTools hooks
+    onMounted(() => {
+      this.el.__owl__ = this.__owl__;
+    })
+    onPatched(() => {
+      this.el.__owl__ = this.__owl__;
+    })
+
   }
 
   /**
